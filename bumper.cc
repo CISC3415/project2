@@ -103,8 +103,9 @@ int main(int argc, char *argv[])
           dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
           pp.SetSpeed(2.0, 0.0);
         }
-        double start_yaw = yaw;
-        while (yaw - start_yaw < M_PI/2) {
+        double start_yaw = yaw + (M_PI/2);
+        if (start_yaw > M_PI*2) start_yaw -= M_PI*2;
+        while (abs(rtod(yaw) - rtod(start_yaw)) > 3.00) {
           std::cout << "curr: " << yaw << std::endl;
           std::cout << "goal: " << start_yaw << std::endl;
           robot.Read();
@@ -131,8 +132,9 @@ int main(int argc, char *argv[])
           dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
           pp.SetSpeed(2.0, 0.0);
         }
-        double start_yaw = yaw;
-        while (start_yaw - yaw < M_PI/2) {
+        double start_yaw = yaw - (M_PI/2);
+        if (start_yaw < 0) start_yaw += 2*M_PI;
+        while (abs(rtod(start_yaw) - rtod(yaw)) > 3.00) {
           std::cout << "curr: " << yaw << std::endl;
           std::cout << "goal: " << start_yaw << std::endl;
           robot.Read();
@@ -146,16 +148,15 @@ int main(int argc, char *argv[])
     
     // randomly bump into things
     
-    int r = rand() % 69 + 1;
+    int r = rand() % 120 + 1;
     std::cout << r << std::endl;
     bool bumped = false;
     if (r == 1) {
       int riter = rand() % 15 + 15;
-      double rspeed = (double)rand() / RAND_MAX;
-      rspeed = (rspeed + 1.5) * (1.5);
-      double rturnrate = (double)rand() / RAND_MAX;
-      rturnrate *= 2*M_PI;
-      std::cout << rspeed << ", " << rturnrate << std::endl;
+      double rspeed = ((double)rand() / RAND_MAX) * 3.0;
+      double rturnrate = ((double)rand() / RAND_MAX) * 2 * M_PI;
+      int sign = rand() % 1;
+      if (sign == 0) rturnrate *= -1;
       
       for (int i = 0; i < riter; i++) {
         if (bp[0] || bp[1]) {
