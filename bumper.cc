@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   }*/
   
   pp.SetSpeed(0.0, 0.0);
-  
+  srand(time(NULL));
   while(true) {
     robot.Read();
     double x = pp.GetXPos();
@@ -83,59 +83,86 @@ int main(int argc, char *argv[])
 
     if (bp[0] || bp[1]) {
       std::cout << "BUMPED!" << std::endl; 
-      for (int i = 0; i < 60; i++) {
+      for (int i = 0; i < 120; i++) {
         pp.SetSpeed(-0.5, 0.0);
       }
       if (dis < 6.0) {
-        std::cout << "INNER" << std::endl; 
-        while (yaw != tta + (M_PI/2)) {
-          std::cout << "1.1" << std::endl;
-          yaw = pp.GetYaw();
-          pp.SetSpeed(0.0, 0.8);
-        }
-        while (dis <= 6.0) {
-          std::cout << "1.2" << std::endl;
-          x = pp.GetXPos();
-          y = pp.GetYPos();
-          dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
-          pp.SetSpeed(1.0, 0.0);
-        }
-      } else {
-        std::cout << "OUTER" << std::endl;
-        tta += M_PI;
-	if (tta > (2*M_PI)) { tta -= (2*M_PI); }
-        while (abs(rtod(yaw)-rtod(tta)) > 0.05) {
+        while (abs(rtod(yaw)-rtod(tta)) > 1.00) {
+          std::cout << "dist: " << rtod(tta) << std::endl;
+          std::cout << "yaw : " << rtod(yaw) << std::endl;
           robot.Read();
           yaw = pp.GetYaw();
-          
-
-          if (yaw < 0) {
-            yaw += (M_PI*2);
-          }
-  	  std::cout << rtod(yaw) << "----" << rtod(tta) << std::endl;
-          std::cout << yaw-tta << std::endl;
-          pp.SetSpeed(0.0, 0.4);
+          if (yaw < 0) yaw += (M_PI*2);
+          pp.SetSpeed(0.0, 0.5);
         }
-        while (dis >= 6.0) {
-          std::cout << "2.2" << std::endl;
+        while (dis < 6.0) {
           robot.Read();
           x = pp.GetXPos();
           y = pp.GetYPos();
           dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
-          pp.SetSpeed(1.0, 0.0);
+          pp.SetSpeed(2.0, 0.0);
         }
         double start_yaw = yaw;
-        while (start_yaw - yaw < M_PI/2) {
-          std::cout << "2.3" << std::endl;
+        while (yaw - start_yaw < M_PI/2) {
           robot.Read();
           yaw = pp.GetYaw();
           if (yaw < 0) yaw += M_PI*2;
-          pp.SetSpeed(0.0, -0.4);
+          pp.SetSpeed(0.0, 0.8);
+        }
+      } else {
+        tta += M_PI;
+	if (tta > (2*M_PI)) tta -= (2*M_PI);
+        while (abs(rtod(yaw)-rtod(tta)) > 1.00) {
+          robot.Read();
+          yaw = pp.GetYaw();
+          if (yaw < 0) yaw += (M_PI*2);
+          pp.SetSpeed(0.0, 0.5);
+        }
+        while (dis >= 6.0) {
+          robot.Read();
+          x = pp.GetXPos();
+          y = pp.GetYPos();
+          dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
+          pp.SetSpeed(2.0, 0.0);
+        }
+        double start_yaw = yaw;
+        while (start_yaw - yaw < M_PI/2) {
+          robot.Read();
+          yaw = pp.GetYaw();
+          if (yaw < 0) yaw += M_PI*2;
+          pp.SetSpeed(0.0, -0.8);
         }
       }
     }
     
-    pp.SetSpeed(2.0, 1.0/3.0);
+    // randomly bump into things
+    
+    int r = rand() % 30 + 1;
+    std::cout << r << std::endl;
+    bool bumped = false;
+    if (r == 1) {
+      int riter = rand() % 10 + 16;
+      double rspeed = (double)rand() / RAND_MAX;
+      rspeed = (rspeed + 1.5) * (1.5);
+      double rturnrate = (double)rand() / RAND_MAX;
+      rturnrate *= 2*M_PI;
+      
+      for (int i = 0; i < riter; i++) {
+        if (bp[0] || bp[1]) bumped = true;
+        std::cout << "GOING " << i << std::endl;
+        robot.Read();
+        pp.SetSpeed(rspeed, rturnrate);
+      }
+      if (bumped) {
+        std::cout << "BACKUP" << std::endl;
+        for (int i = 0; i < 120; i++) {
+          robot.Read();
+          pp.SetSpeed(-0.5, 0.0);
+        }
+      }
+    }
+   
+    pp.SetSpeed(3.0, 1.0/2.0);
   }
   // Control loop
   while(true) 
