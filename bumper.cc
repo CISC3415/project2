@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <libplayerc++/playerc++.h>
+#include <math.h>
 
 int main(int argc, char *argv[])
 {  
@@ -40,24 +41,101 @@ int main(int argc, char *argv[])
 
   pp.SetSpeed(1.0, 0.0);
   
-  double start_x = 0;
-  while (start_x <= 5.5) {
+  double start_x = 0.0;
+  double rads = 0.0;
+  double t = clock();
+
+  // Find a way to hit the circumference of the circle
+
+  
+
+  /*while (start_x <= 6.0) {
     robot.Read();
     std::cout << "x: " << pp.GetXPos()  << std::endl;
     std::cout << "y: " << pp.GetYPos()  << std::endl;
     std::cout << "a: " << pp.GetYaw()  << std::endl;
-    start_x = pp.GetXPos(); 
+    start_x = pp.GetXPos();
+     
     pp.SetSpeed(1.0, 0.0);
-  }
+  }*/
   
   pp.SetSpeed(0.0, 0.0);
   
   while(true) {
     robot.Read();
+    double x = pp.GetXPos();
+    double y = pp.GetYPos();
+    double yaw = pp.GetYaw();
+    if (yaw < 0) {
+      yaw += (M_PI*2);
+    }
+    double tta = atan2(y-6, x-6);
+    if (tta < 0) {
+      tta += (M_PI*2);
+    }
+
+    double dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
     std::cout << "x: " << pp.GetXPos()  << std::endl;
     std::cout << "y: " << pp.GetYPos()  << std::endl;
-    std::cout << "a: " << pp.GetYaw()  << std::endl;
-    pp.SetSpeed(2.0, 2.0/5.5);
+    std::cout << "a: " << rtod(yaw)  << std::endl;
+    std::cout << "t: " << rtod(tta) << std::endl;
+    std::cout << "d: " << dis << std::endl;
+
+    if (bp[0] || bp[1]) {
+      std::cout << "BUMPED!" << std::endl; 
+      for (int i = 0; i < 60; i++) {
+        pp.SetSpeed(-0.5, 0.0);
+      }
+      if (dis < 6.0) {
+        std::cout << "INNER" << std::endl; 
+        while (yaw != tta + (M_PI/2)) {
+          std::cout << "1.1" << std::endl;
+          yaw = pp.GetYaw();
+          pp.SetSpeed(0.0, 0.8);
+        }
+        while (dis <= 6.0) {
+          std::cout << "1.2" << std::endl;
+          x = pp.GetXPos();
+          y = pp.GetYPos();
+          dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
+          pp.SetSpeed(1.0, 0.0);
+        }
+      } else {
+        std::cout << "OUTER" << std::endl;
+        tta += M_PI;
+	if (tta > (2*M_PI)) { tta -= (2*M_PI); }
+        while (abs(rtod(yaw)-rtod(tta)) > 0.05) {
+          robot.Read();
+          yaw = pp.GetYaw();
+          
+
+          if (yaw < 0) {
+            yaw += (M_PI*2);
+          }
+  	  std::cout << rtod(yaw) << "----" << rtod(tta) << std::endl;
+          std::cout << yaw-tta << std::endl;
+          pp.SetSpeed(0.0, 0.4);
+        }
+        while (dis >= 6.0) {
+          std::cout << "2.2" << std::endl;
+          robot.Read();
+          x = pp.GetXPos();
+          y = pp.GetYPos();
+          dis = sqrt(abs((x-6)*(x-6)) + abs((y-6)*(y-6)));
+          pp.SetSpeed(1.0, 0.0);
+        }
+        double start_yaw = yaw;
+        while (start_yaw - yaw < M_PI/2) {
+          std::cout << "2.3" << std::endl;
+          robot.Read();
+          yaw = pp.GetYaw();
+          if (yaw < 0) yaw += M_PI*2;
+          pp.SetSpeed(0.0, -0.4);
+        }
+      }
+    }
+    
+    pp.SetSpeed(2.0, 1.0/3.0);
   }
   // Control loop
   while(true) 
