@@ -81,18 +81,19 @@ int main(int argc, char *argv[])
     std::cout << "t: " << rtod(tta) << std::endl;
     std::cout << "d: " << dis << std::endl;
 
-    if (bp[0] || bp[1]) {
+    if (bp[0] || bp[1] || pp.GetStall()) {
       std::cout << "BUMPED!" << std::endl; 
       for (int i = 0; i < 120; i++) {
         pp.SetSpeed(-0.5, 0.0);
       }
       if (dis < 6.0) {
-        while (abs(rtod(yaw)-rtod(tta)) > 1.00) {
+        while (abs(rtod(yaw)-rtod(tta)) > 3.00) {
           std::cout << "dist: " << rtod(tta) << std::endl;
           std::cout << "yaw : " << rtod(yaw) << std::endl;
           robot.Read();
           yaw = pp.GetYaw();
           if (yaw < 0) yaw += (M_PI*2);
+          if (yaw > M_PI*2) yaw -= (M_PI*2);
           pp.SetSpeed(0.0, 0.5);
         }
         while (dis < 6.0) {
@@ -104,18 +105,23 @@ int main(int argc, char *argv[])
         }
         double start_yaw = yaw;
         while (yaw - start_yaw < M_PI/2) {
+          std::cout << "curr: " << yaw << std::endl;
+          std::cout << "goal: " << start_yaw << std::endl;
           robot.Read();
           yaw = pp.GetYaw();
           if (yaw < 0) yaw += M_PI*2;
-          pp.SetSpeed(0.0, 0.8);
+          if (yaw > M_PI*2) yaw -= (M_PI*2);
+          pp.SetSpeed(0.0, 0.4);
         }
       } else {
         tta += M_PI;
 	if (tta > (2*M_PI)) tta -= (2*M_PI);
-        while (abs(rtod(yaw)-rtod(tta)) > 1.00) {
+        double diff = abs(rtod(yaw)-rtod(tta));
+        while (abs(rtod(yaw)-rtod(tta)) > 3.00) {
           robot.Read();
           yaw = pp.GetYaw();
           if (yaw < 0) yaw += (M_PI*2);
+          if (yaw > M_PI*2) yaw -= (M_PI*2);
           pp.SetSpeed(0.0, 0.5);
         }
         while (dis >= 6.0) {
@@ -127,109 +133,45 @@ int main(int argc, char *argv[])
         }
         double start_yaw = yaw;
         while (start_yaw - yaw < M_PI/2) {
+          std::cout << "curr: " << yaw << std::endl;
+          std::cout << "goal: " << start_yaw << std::endl;
           robot.Read();
           yaw = pp.GetYaw();
           if (yaw < 0) yaw += M_PI*2;
-          pp.SetSpeed(0.0, -0.8);
+          if (yaw > M_PI*2) yaw -= (M_PI*2);
+          pp.SetSpeed(0.0, -0.4);
         }
       }
     }
     
     // randomly bump into things
     
-    int r = rand() % 30 + 1;
+    int r = rand() % 69 + 1;
     std::cout << r << std::endl;
     bool bumped = false;
     if (r == 1) {
-      int riter = rand() % 10 + 16;
+      int riter = rand() % 15 + 15;
       double rspeed = (double)rand() / RAND_MAX;
       rspeed = (rspeed + 1.5) * (1.5);
       double rturnrate = (double)rand() / RAND_MAX;
       rturnrate *= 2*M_PI;
+      std::cout << rspeed << ", " << rturnrate << std::endl;
       
       for (int i = 0; i < riter; i++) {
-        if (bp[0] || bp[1]) bumped = true;
-        std::cout << "GOING " << i << std::endl;
+        if (bp[0] || bp[1]) {
+          for (int i = 0; i < 10; i++) {
+            robot.Read();
+            pp.SetSpeed(-0.5, 0.0);
+          }
+          break;
+        }
         robot.Read();
         pp.SetSpeed(rspeed, rturnrate);
       }
-      if (bumped) {
-        std::cout << "BACKUP" << std::endl;
-        for (int i = 0; i < 120; i++) {
-          robot.Read();
-          pp.SetSpeed(-0.5, 0.0);
-        }
-      }
+      
     }
-   
     pp.SetSpeed(3.0, 1.0/2.0);
   }
-  // Control loop
-  while(true) 
-    {    
-      double turnrate, speed;
-
-      // Read from the proxies.
-      robot.Read();
-
-      // What does odometry tell us? In other words, how far do we
-      // think we have gone?
-      std::cout << "x: " << pp.GetXPos()  << std::endl;
-      std::cout << "y: " << pp.GetYPos()  << std::endl;
-      std::cout << "a: " << pp.GetYaw()  << std::endl;
-
-
-      // Print out what the bumpers tell us:
-      std::cout << "Left  bumper: " << bp[0] << std::endl;
-      std::cout << "Right bumper: " << bp[1] << std::endl;
-      
-      // If either bumper is pressed, go backwards. Depending on the
-      // combination of bumpers that are pressed, turn some also,
-      // trying to turn away from the point of contact. 
-      //
-      // Otherwise just go forwards
-      if(bp[0] || bp[1]){
-
-	speed=-0.5;
-
-	// Left bumper in contact, right bumper not in contact. Turn
-	// to the right.  
-	//
-	// dtor converts from degrees to radians.
-	if (bp[0] && !bp[1]) {  
-	  turnrate=dtor(-10);  
-	}
-
-	// Left bumper not in contact, right bumper in contact. Turn
-	// to the left
-	if (!bp[0] && bp[1]) {
-	  turnrate=dtor(10);
-	}
-
-	// Both left and right bumpers in contact. Make a random
-	// choice about which way to turn.
-	if (bp[0] && bp[1]) {
-	  if(rand()%2 > 0){
-	    turnrate=dtor(-10);
-	  }
-	  else {
-	    turnrate=dtor(10);
-	  }
-	}
-      } 
-      else {
-	  turnrate = 0;   
-	  speed=0.5;
-	}     
-
-      // What did we decide to do?
-      std::cout << "Speed: " << speed << std::endl;      
-      std::cout << "Turn rate: " << turnrate << std::endl << std::endl;
-
-      // Send the motion commands that we decided on to the robot.
-      pp.SetSpeed(speed, turnrate);  
-    }
-  
 }
 
 
