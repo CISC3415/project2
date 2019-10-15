@@ -16,19 +16,68 @@ int main(int argc, char *argv[])
   double speed = 1.0;
   double turnrate = 0.0;
   double bumpangle = 0.0;
+  double adjustangle = dtor(4);
   bool doublebumped = false;
   srand(time(NULL));
   
+  // Array listing whether or not each of the four quadrants have been visited.
+  // Sets a quadrant to true if the robot has entered the quadrant.
+  bool visited[4] = { false };
+  
+  // Sets the original location of the robot. 
+  // If all four quadrants have been hit, and robot enters within a certain
+  // distance to its original location, the robot should stop.
+  robot.Read();
+  double yaw;
+  double currXPos, startXPos = pp.GetXPos();
+  double currYPos, startYPos = pp.GetYPos();
+  double proximity = 3.0;               // Set the proximity for the goal area.
+ 
+  // Sets the original quadrant
+  int currQuadrant, startQuadrant;
+  if (currXPos > 6 && currYPos > 6) startQuadrant = 0;
+  if (currXPos < 6 && currYPos > 6) startQuadrant = 1;
+  if (currXPos < 6 && currYPos < 6) startQuadrant = 1;
+  if (currXPos > 6 && currYPos < 6) startQuadrant = 1;
+ 
   while (true) {
     robot.Read();
-    std::cout << "x: " << pp.GetXPos()  << std::endl;
-    std::cout << "y: " << pp.GetYPos()  << std::endl;
-    std::cout << "a: " << pp.GetYaw()  << std::endl;
-    
-    double yaw = pp.GetYaw();
-    if (yaw < 0) yaw += M_PI * 2;
+    currXPos = pp.GetXPos();
+    currYPos = pp.GetYPos();
+    yaw = pp.GetYaw();
+    if (yaw < 0) yaw += M_PI * 2;       // 0 <= yaw <= M_PI*2
     if (yaw > M_PI * 2) yaw -= M_PI * 2;
+
+    std::cout << "x: " << currXPos  << std::endl;
+    std::cout << "y: " << currYPos  << std::endl;
+    std::cout << "a: " << yaw << std::endl << std::endl;
+
+    // Sets current quadrant.
+    // Quadrant I
+    if (currXPos > 6 && currYPos > 6) currQuadrant = 0;
+    // Quadrant II
+    if (currXPos < 6 && currYPos > 6) currQuadrant = 1;
+    // Quadrant III
+    if (currXPos < 6 && currYPos < 6) currQuadrant = 2;
+    // Quadrant IV
+    if (currXPos > 6 && currYPos < 6) currQuadrant = 3;
+
+    // Sets current quadrant as visited.
+    visited[currQuadrant] = true;
     
+    // Manhattan distance
+    double mandist = abs(currXPos-startXPos) + abs(currYPos-startYPos);
+    // Euclidian distance
+    double dist = sqrt(mandist * mandist);
+
+    // If all four quadrants have been visited and robot has entered
+    // the goal area, stop.    
+    if (visited[0] && visited[1] && visited[2] && visited[3] && dist <= proximity) {
+      speed = 0.0;
+      turnrate = 0.0;
+      break;
+    }
+
     // If robot is stalled, nudge itself out by randomly
     // moving back and forth and turning in a random direction
     // until it is no longer stuck.
@@ -51,7 +100,8 @@ int main(int argc, char *argv[])
       if (anglediff > M_PI * 2)         // never exceeds 2*PI rads.
         anglediff -= M_PI * 2;
 
-      if (anglediff < M_PI / 2) {       // If robot has not turned 90 deg
+
+      if (anglediff < M_PI / 2 - adjustangle) {       // If robot has not turned 90 deg
         speed = -0.05;                  // keep turning and moving back.
         turnrate = 0.8;
       } else {                          // If robot has turned at least
@@ -65,7 +115,7 @@ int main(int argc, char *argv[])
     } else if (bp[0] && bp[1]) { std::cout << "BOTH" << std::endl;
       doublebumped = true;              // Sets doublebumped.
       bumpangle = yaw;                  // Sets start angle of robot.
-      speed = -0.1;                     // Move back to prevent stall.
+      speed = -0.5;                     // Move back to prevent stall.
 
     // If robot hits left bumper, turn clockwise while moving back.
     } else if (bp[0]) { std::cout << "LEFT" << std::endl;
@@ -74,7 +124,7 @@ int main(int argc, char *argv[])
 
     // If robot hits right bumper, turn counter-clockwise while moving back.
     } else if (bp[1]) { std::cout << "RIGHT" << std::endl;
-      speed = -0.1;
+      speed = -0.5;
       turnrate = 0.4;
     } else {
       speed = 2.0;
