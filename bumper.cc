@@ -30,16 +30,19 @@ int main(int argc, char *argv[])
     if (yaw > M_PI * 2) yaw -= M_PI * 2;
     
     // If robot is stalled, nudge itself out by randomly
-    // moving back and forth and turning counter-clockwise
+    // moving back and forth and turning in a random direction
     // until it is no longer stuck.
-    if (pp.GetStall()) {
-      int sign = rand() % 2;            // random back & forth
-      if (sign == 0) speed = -0.5;
+    if (pp.GetStall()) { std::cout << "STALL" << std::endl;
+      int speedsign = rand() % 2;       // random back & forth
+      int turnsign = rand() % 2;
+      if (speedsign == 0) speed = -0.5;
       else speed = 0.5;                 
-      turnrate = 0.8;                   // counter-clockwise turn
+
+      if (turnsign == 0) turnrate = 0.8;
+      else turnrate = 0.8;              // counter-clockwise turn
     
     // If robot has previously hit both bumpers, turn at least 90 degrees.
-    } else if (doublebumped) {
+    } else if (doublebumped) { std::cout << "DBL" << std::endl;
       double anglediff = yaw-bumpangle; // Difference between current
                                         // angle and start angle.
 
@@ -59,20 +62,20 @@ int main(int argc, char *argv[])
     
     // If robot first hits both bumpers, set bool doublebumped
     // which then initiates a 90 degree turn.
-    } else if (bp[0] && bp[1]) {
+    } else if (bp[0] && bp[1]) { std::cout << "BOTH" << std::endl;
       doublebumped = true;              // Sets doublebumped.
       bumpangle = yaw;                  // Sets start angle of robot.
       speed = -0.1;                     // Move back to prevent stall.
 
     // If robot hits left bumper, turn clockwise while moving back.
-    } else if (bp[0]) {
-      speed = -0.5;
-      turnrate = -0.8;
+    } else if (bp[0]) { std::cout << "LEFT" << std::endl;
+      speed = -0.1;
+      turnrate = -0.4;
 
     // If robot hits right bumper, turn counter-clockwise while moving back.
-    } else if (bp[1]) {
-      speed = -0.5;
-      turnrate = 0.8;
+    } else if (bp[1]) { std::cout << "RIGHT" << std::endl;
+      speed = -0.1;
+      turnrate = 0.4;
     } else {
       speed = 2.0;
       turnrate = 0.0;
