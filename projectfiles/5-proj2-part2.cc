@@ -1,3 +1,26 @@
+/*
+ *  CISC-3415 Robotics
+ *  Project 2 - Part 1
+ *  Date: 17th October 2019
+ *
+ ** Group Members *************************************************************
+ *    
+ *  Benjamin Yi
+ *  Emmanuel Desdunes
+ *  Montasir Omi
+ *  Shahzad Ahmad
+ *
+ ** Description ***************************************************************
+ * 
+ *  A program which instructs a simulated robot to roam the simulated
+ *  world by only using its sensors (bumpers). The world this time is a
+ *  simple maze. As the robot only has bumpers, we assist the robot by
+ *  telling it when to turn left and right, allowing it to successfully
+ *  finish the maze. To do this, we tell the robot to swap turn signals 
+ *  every second bump, and to stop at the final seventh bump.
+ * 
+ */
+
 #include <iostream>
 #include <cstdlib>
 #include <libplayerc++/playerc++.h>

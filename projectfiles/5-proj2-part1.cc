@@ -1,3 +1,25 @@
+/*
+ *  CISC-3415 Robotics
+ *  Project 2 - Part 1
+ *  Date: 10th October 2019
+ *
+ ** Group Members *************************************************************
+ *    
+ *  Benjamin Yi
+ *  Emmanuel Desdunes
+ *  Montasir Omi
+ *  Shahzad Ahmad
+ *
+ ** Description ***************************************************************
+ * 
+ *  A program which instructs a simulated robot to roam the simulated
+ *  world by only using its sensors (bumpers). The world is mostly clear
+ *  except for a giant rock looking object anchored to the center.
+ *  The goal of the robot is to use its bumper to navigate to all four
+ *  quadrants of the map. Once it enters the vicinity of its original location,
+ *  it will halt.
+ */
+
 #include <iostream>
 #include <cstdlib>
 #include <libplayerc++/playerc++.h>
