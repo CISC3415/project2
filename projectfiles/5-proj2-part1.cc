@@ -15,10 +15,9 @@ int main(int argc, char *argv[])
   
   double speed = 1.0;
   double turnrate = 0.0;
-  double bumpangle = 0.0;
-  double adjustangle = dtor(4);
-  bool doublebumped = false;
-  srand(time(NULL));
+  int i = 0;                            // Standard iterator
+  bool bumped = false;                  // Required to initiate turns
+  srand(time(NULL));                    // Required for nudging out
   
   // Array listing whether or not each of the four quadrants have been visited.
   // Sets a quadrant to true if the robot has entered the quadrant.
@@ -28,7 +27,6 @@ int main(int argc, char *argv[])
   // If all four quadrants have been hit, and robot enters within a certain
   // distance to its original location, the robot should stop.
   robot.Read();
-  double yaw;
   double currXPos, startXPos = pp.GetXPos();
   double currYPos, startYPos = pp.GetYPos();
   double proximity = 3.0;               // Set the proximity for the goal area.
@@ -44,13 +42,10 @@ int main(int argc, char *argv[])
     robot.Read();
     currXPos = pp.GetXPos();
     currYPos = pp.GetYPos();
-    yaw = pp.GetYaw();
-    if (yaw < 0) yaw += M_PI * 2;       // 0 <= yaw <= M_PI*2
-    if (yaw > M_PI * 2) yaw -= M_PI * 2;
 
     std::cout << "x: " << currXPos  << std::endl;
     std::cout << "y: " << currYPos  << std::endl;
-    std::cout << "a: " << yaw << std::endl << std::endl;
+    std::cout << "a: " << pp.GetYaw() << std::endl << std::endl;
 
     // Sets current quadrant.
     // Quadrant I
@@ -81,9 +76,9 @@ int main(int argc, char *argv[])
     // If robot is stalled, nudge itself out by randomly
     // moving back and forth and turning in a random direction
     // until it is no longer stuck.
-    if (pp.GetStall()) { std::cout << "STALL" << std::endl;
+    if (pp.GetStall()) {
       int speedsign = rand() % 2;       // random back & forth
-      int turnsign = rand() % 2;
+      int turnsign = rand() % 2;        // random turn direction
       if (speedsign == 0) speed = -0.5;
       else speed = 0.5;                 
 
@@ -91,40 +86,39 @@ int main(int argc, char *argv[])
       else turnrate = 0.8;              // counter-clockwise turn
     
     // If robot has previously hit both bumpers, turn at least 90 degrees.
-    } else if (doublebumped) { std::cout << "DBL" << std::endl;
-      double anglediff = yaw-bumpangle; // Difference between current
-                                        // angle and start angle.
-
-      if (anglediff < 0)                // Angle never below 0 rads
-        anglediff += M_PI * 2;          // and
-      if (anglediff > M_PI * 2)         // never exceeds 2*PI rads.
-        anglediff -= M_PI * 2;
-
-
-      if (anglediff < M_PI / 2 - adjustangle) {       // If robot has not turned 90 deg
-        speed = -0.05;                  // keep turning and moving back.
+    } else if (bumped) {
+      if (i < 16) {                     // 0-16 : robot backs up
+        speed = -1.0;
+        turnrate = 0.0;
+      } else if (i < 36) {              // 17-36 : robot turns (~90degrees)
+        speed = 0.0;
         turnrate = 0.8;
-      } else {                          // If robot has turned at least
-        turnrate = 0.0;                 // 90 degrees, resume normal route. 
+      } else {
+        bumped = false;
         speed = 2.0;
-        doublebumped = false;
+        turnrate = 0.0;
       }
-    
-    // If robot first hits both bumpers, set bool doublebumped
+      i++;
+    // If robot first hits both bumpers, set bumped
     // which then initiates a 90 degree turn.
-    } else if (bp[0] && bp[1]) { std::cout << "BOTH" << std::endl;
-      doublebumped = true;              // Sets doublebumped.
-      bumpangle = yaw;                  // Sets start angle of robot.
+    } else if (bp[0] && bp[1]) {
+      bumped = true;                    // Sets bumped.
+      i = 0;
       speed = -0.5;                     // Move back to prevent stall.
+      turnrate = 0.0;
 
     // If robot hits left bumper, turn clockwise while moving back.
-    } else if (bp[0]) { std::cout << "LEFT" << std::endl;
-      speed = -0.1;
+    } else if (bp[0]) {
+      int speedsign = rand() % 2;       // Prevents stall
+      speed = -0.2;
+      if (speedsign == 0) speed *= -1;
       turnrate = -0.4;
 
     // If robot hits right bumper, turn counter-clockwise while moving back.
-    } else if (bp[1]) { std::cout << "RIGHT" << std::endl;
-      speed = -0.5;
+    } else if (bp[1]) {
+      int speedsign = rand() % 2;       // Prevents stall
+      speed = -0.2;
+      if (speedsign == 0) speed *= -1;
       turnrate = 0.4;
     } else {
       speed = 2.0;
