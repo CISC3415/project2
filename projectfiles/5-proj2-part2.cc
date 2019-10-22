@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <libplayerc++/playerc++.h>
 #include <math.h>
+
 int main(int argc, char *argv[])
 {  
   using namespace PlayerCc;  
@@ -15,10 +16,10 @@ int main(int argc, char *argv[])
   
   double speed = 2.0;
   double turnrate = 0.0;
-  int turnsignal = 1;
-  int i = 0;
-  int timesbumped = 0;
-  bool bumped = false;
+  int turnsignal = 1;                   // determines left/right turn
+  int i = 0;                            // robot progress
+  int timesbumped = 0;                  // determines when to turn
+  bool bumped = false;                  // determines when to rotate
 
   while (true) {
     robot.Read();
@@ -27,16 +28,15 @@ int main(int argc, char *argv[])
     std::cout << "y: " << pp.GetYPos() << std::endl;
     std::cout << "a: " << pp.GetYaw() << std:: endl << std::endl;
 
-    // If robot has previously hit both bumpers, turn at least 90 degrees.
+    // If robot has previously hit a bumper....
     if (bumped) {
-      if (i < 16) {
+      if (i < 16) {                     // Move back ~2 meters
         speed = -1.0;
         turnrate = 0.0; 
-                                        // angle and start angle.
-     } else if (i < 36) {
+     } else if (i < 36) {               // Rotate ~(+/-)90 degrees
         speed = 0.0;
         turnrate = 0.8 * turnsignal;
-      } else {
+      } else {                          // Resume normal activity
         bumped = false;
         turnrate = 0.0;
         speed = 2.0;
@@ -50,15 +50,15 @@ int main(int argc, char *argv[])
     // set bool bumped
     // which then initiates a 90 degree turn.
     } else if (bp[0] || bp[1]) {
-      bumped = true;              // Sets doublebumped.
-      timesbumped++;
-      if (timesbumped == 7) {
-        pp.SetSpeed(0.0, 0.0);
+      bumped = true;                    // Set bumped.
+      timesbumped++;                   
+      if (timesbumped == 7) {           // 7th bumps means robot is at goal.
+        pp.SetSpeed(0.0, 0.0);          // STOP.
         break;
       }
       if (timesbumped > 1 && timesbumped % 2 == 1)
-        turnsignal *= -1;
-      speed = -1.0;                     // Move back to prevent stall.
+        turnsignal *= -1;               // Swap turn signal every 2 bumps.
+      speed = -1.0;                     // Start moving back.
       turnrate = 0.0;
       i = 0;
     }
